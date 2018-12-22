@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        M3 'mvn-3.5.2'
-    }
-
     stages {
         stage('Build') { 
             steps {
@@ -17,9 +13,14 @@ pipeline {
                 sh "docker tag nhkchan/springtestdocker:${env.BUILD_ID} nhkchan/springtestdocker:latest"
             }
         }
-        stage('Run Docker Container') {
-            steps {
-                sh "docker run nhkchan/springtestdocker:latest"
+    }
+    
+    post {
+        success {
+            withCredentials([usernamePassword(credentialsId: 'docker-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                sh "docker login -u ${USERNAME} -p ${PASSWORD}"
+                sh "docker push nhkchan/springtestdocker:${env.BUILD_ID}"
+                sh "docker push nhkchan/springtestdocker:latest"
             }
         }
     }
